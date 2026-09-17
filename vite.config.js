@@ -1,8 +1,8 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from '@vitejs/plugin-react'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  base: './',
+  base: '/hotel-booking-prototype/',
   plugins: [react()],
   server: {
     port: 5173,
