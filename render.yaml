@@ -2,7 +2,7 @@ services:
   - type: web
     name: stayos-booking-api
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
@@ -10,6 +10,14 @@ services:
       - key: NODE_VERSION
         value: 22
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: stayos-booking-db
+          property: connectionString
       - key: CORS_ORIGIN
-        sync: false
+        value: https://krishnashine716-create.github.io
+
+databases:
+  - name: stayos-booking-db
+    plan: free
+    databaseName: stayos_bookings
+    user: stayos_app
