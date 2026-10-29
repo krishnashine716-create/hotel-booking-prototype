@@ -1,56 +1,47 @@
 # Hotel Booking Prototype
 
-A modern, responsive direct-booking website prototype for independent hotels.
+A responsive direct-booking website prototype for independent hotels, with an Express API and persistent booking storage.
 
-## Current prototype
+## Features
 
-- Responsive hotel landing page
-- Room catalogue with demo availability data
-- Date and guest selection
-- Direct booking modal
-- Booking validation and confirmation flow
-- Express API for rooms and bookings
-- Frontend fallback so the public GitHub Pages demo remains interactive
-- Vite + React + TypeScript frontend
-- Express backend
+- Responsive hotel landing page and room catalogue
+- Room, guest, and date validation
+- Availability endpoint and prevention of overlapping reservations for the same room
+- Persistent local JSON storage for local development
+- PostgreSQL storage when `DATABASE_URL` is configured
+- API health endpoint for deployment monitoring
+- The frontend only displays a confirmed booking after the API accepts it
+- Configure a separately hosted API with `VITE_API_BASE_URL`
 
 ## Run locally
 
-Install dependencies:
+Requires Node.js 20+.
 
 ```bash
 npm install
-```
-
-Start the frontend:
-
-```bash
 npm run dev
 ```
 
-In a second terminal, start the backend:
+In a second terminal:
 
 ```bash
 npm run server
 ```
 
-The frontend runs at `http://localhost:5173` and proxies `/api` requests to `http://localhost:4000`.
+Frontend: `http://localhost:5173`
+API health: `http://localhost:4000/api/health`
 
-## Public preview
+Without `DATABASE_URL`, bookings persist to `server/data/bookings.json`. This is for local development only. Use PostgreSQL for hosted deployments.
 
-The `main` branch is configured for automatic GitHub Pages deployment through GitHub Actions. Each push to `main` builds `dist/` and deploys the static frontend.
+## Deploy the API
 
-Expected preview URL:
+A Render blueprint is provided in `render.yaml`. Create a managed PostgreSQL database and deploy the repository as a Web Service. Configure these environment variables in the API service:
 
-`https://krishnashine716-create.github.io/hotel-booking-prototype/`
+- `DATABASE_URL`: PostgreSQL connection string from your database provider
+- `CORS_ORIGIN`: public frontend origin, e.g. `https://krishnashine716-create.github.io`
 
-The public Pages version uses the frontend's demo fallback because GitHub Pages hosts the static frontend only. The Express API can be deployed separately later and connected through an environment variable.
+The API health check is `/api/health`. For the frontend build, set `VITE_API_BASE_URL` to the deployed API base URL (for example, `https://your-api.onrender.com`) and rebuild/redeploy the static frontend.
 
-## Next steps
+## Important limitations before launch
 
-1. Move bookings into PostgreSQL/Supabase.
-2. Add real availability and room inventory.
-3. Add payment processing and transactional booking emails.
-4. Deploy the Express API and connect it to the live frontend.
-5. Add a hotel admin dashboard.
-6. Evolve the shared backend into the StayOS platform.
+This remains a prototype until the API and PostgreSQL database are deployed, the public frontend is rebuilt with the API URL, and end-to-end tests pass. It does not process payments, send transactional emails, provide cancellation/admin workflows, or manage multiple hotels. Do not accept paid guest bookings until deployment and testing are complete.
