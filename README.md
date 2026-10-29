@@ -33,14 +33,14 @@ API health: `http://localhost:4000/api/health`
 
 Without `DATABASE_URL`, bookings persist to `server/data/bookings.json`. This is for local development only. Use PostgreSQL for hosted deployments.
 
-## Deploy the API
+## Deploy the backend
 
-A Render blueprint is provided in `render.yaml`. Create a managed PostgreSQL database and deploy the repository as a Web Service. Configure these environment variables in the API service:
+1. Open the repository on Render and choose **New > Blueprint**, then select this repository. The `render.yaml` blueprint defines the Express API and a PostgreSQL database.
+2. Wait for the API deployment to finish. Test `https://YOUR-API.onrender.com/api/health`; it should return `status: "ok"` and `storage: "postgresql"`.
+3. In GitHub, open **Settings > Secrets and variables > Actions > Variables** and create a repository variable named `VITE_API_BASE_URL` with the API base URL, without a trailing slash (for example, `https://your-api.onrender.com`).
+4. Merge this branch into `main` and rerun the **Deploy hotel website to GitHub Pages** workflow. The public frontend build will then call the deployed API.
 
-- `DATABASE_URL`: PostgreSQL connection string from your database provider
-- `CORS_ORIGIN`: public frontend origin, e.g. `https://krishnashine716-create.github.io`
-
-The API health check is `/api/health`. For the frontend build, set `VITE_API_BASE_URL` to the deployed API base URL (for example, `https://your-api.onrender.com`) and rebuild/redeploy the static frontend.
+The API allows the current GitHub Pages origin in `CORS_ORIGIN`. If you use a custom domain, update that variable in Render to the exact origin.
 
 ## Important limitations before launch
 
