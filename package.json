@@ -1,18 +1,21 @@
 {
   "name": "hotel-booking-prototype",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "server": "node server/index.js",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server/index.js",
+    "test": "node --test"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "pg": "^8.16.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

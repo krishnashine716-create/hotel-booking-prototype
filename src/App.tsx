@@ -68,19 +68,20 @@ const nightsBetween = (from: string, to: string) => {
 
 export default function App() {
   const [rooms, setRooms] = useState<Room[]>(fallbackRooms)
-  const [checkIn, setCheckIn] = useState('2026-09-24')
-  const [checkOut, setCheckOut] = useState('2026-09-26')
+  const [checkIn, setCheckIn] = useState(() => new Date(Date.now() + 86400000).toISOString().slice(0, 10))
+  const [checkOut, setCheckOut] = useState(() => new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10))
   const [guests, setGuests] = useState(2)
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [bookingOpen, setBookingOpen] = useState(false)
   const [booking, setBooking] = useState<Booking | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [availabilityMessage, setAvailabilityMessage] = useState('')
   const [guestName, setGuestName] = useState('')
   const [email, setEmail] = useState('')
 
   useEffect(() => {
-    fetch('/api/rooms')
+    fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/rooms')
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Backend unavailable'))))
       .then((data) => setRooms(data.rooms))
       .catch(() => undefined)
@@ -88,6 +89,24 @@ export default function App() {
 
   const nights = useMemo(() => nightsBetween(checkIn, checkOut), [checkIn, checkOut])
   const selectedTotal = selectedRoom ? selectedRoom.price * nights : 0
+  useEffect(() => {
+    if (!selectedRoom || nights < 1) {
+      setAvailabilityMessage('')
+      return
+    }
+    const controller = new AbortController()
+    const params = new URLSearchParams({ roomId: String(selectedRoom.id), checkIn, checkOut })
+    fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/availability?' + params.toString(), { signal: controller.signal })
+      .then(async (res) => {
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.message || 'Availability could not be checked.')
+        setAvailabilityMessage(data.available ? selectedRoom.name + ' is available for the selected dates.' : selectedRoom.name + ' is unavailable for the selected dates.')
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') setAvailabilityMessage('Live availability is unavailable until the booking API is connected.')
+      })
+    return () => controller.abort()
+  }, [selectedRoom, checkIn, checkOut, nights])
 
   const openBooking = (room: Room) => {
     setSelectedRoom(room)
@@ -101,6 +120,10 @@ export default function App() {
       setError('Please choose valid check-in and check-out dates.')
       return
     }
+    if (!guestName.trim() || !email.trim()) {
+      setError('Enter your name and email to continue.')
+      return
+    }
     if (guests > selectedRoom.capacity) {
       setError(`This room accepts up to ${selectedRoom.capacity} guests.`)
       return
@@ -109,7 +132,7 @@ export default function App() {
     setError('')
 
     try {
-      const response = await fetch('/api/bookings', {
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomId: selectedRoom.id, guestName, email, checkIn, checkOut, guests }),
@@ -118,19 +141,8 @@ export default function App() {
       if (!response.ok) throw new Error(data.message || 'Could not create booking')
       setBooking(data.booking)
       setBookingOpen(false)
-    } catch {
-      setBooking({
-        id: `GV-DEMO-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
-        roomId: selectedRoom.id,
-        roomName: selectedRoom.name,
-        guestName: guestName.trim(),
-        email: email.trim().toLowerCase(),
-        checkIn,
-        checkOut,
-        guests,
-        total: selectedTotal,
-      })
-      setBookingOpen(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'The booking service is unavailable. Your booking was not created. Please try again later.')
     } finally {
       setLoading(false)
     }
@@ -185,6 +197,7 @@ export default function App() {
 
       <section className="rooms-section" id="rooms">
         <div className="rooms-heading"><div><div className="section-kicker">Stay your way</div><h2>Rooms & suites</h2></div><span className="availability">● Live availability</span></div>
+        {availabilityMessage && <p role="status" className="availability-message">{availabilityMessage}</p>}
         <div className="room-list">
           {rooms.map((room) => (
             <article className="room-card" key={room.id}>
@@ -206,7 +219,7 @@ export default function App() {
         <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setBookingOpen(false)}>
           <div className="booking-modal"><button className="close" onClick={() => setBookingOpen(false)}>×</button><div className="section-kicker">Reserve directly</div><h2>{selectedRoom.name}</h2><div className="booking-summary"><span>{checkIn} → {checkOut}</span><strong>{nights} {nights === 1 ? 'night' : 'nights'} · {formatCurrency(selectedTotal)}</strong></div>
             <form onSubmit={submitBooking}><label>Full name<input value={guestName} onChange={(e) => setGuestName(e.target.value)} required placeholder="Your name" /></label><label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" /></label>{error && <div className="form-error">{error}</div>}<button className="primary-btn full" disabled={loading}>{loading ? 'Confirming…' : 'Confirm booking'}</button></form>
-            <p className="modal-note">Live backend when available; GitHub Pages uses a demo confirmation so you can test the full flow.</p>
+            <p className="modal-note">Your reservation is confirmed only after the booking service accepts it.</p>
           </div>
         </div>
       )}
