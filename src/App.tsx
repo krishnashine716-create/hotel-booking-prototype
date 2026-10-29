@@ -81,7 +81,7 @@ export default function App() {
   const [email, setEmail] = useState('')
 
   useEffect(() => {
-    fetch('/api/rooms')
+    fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/rooms')
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Backend unavailable'))))
       .then((data) => setRooms(data.rooms))
       .catch(() => undefined)
@@ -96,7 +96,7 @@ export default function App() {
     }
     const controller = new AbortController()
     const params = new URLSearchParams({ roomId: String(selectedRoom.id), checkIn, checkOut })
-    fetch('/api/availability?' + params.toString(), { signal: controller.signal })
+    fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/availability?' + params.toString(), { signal: controller.signal })
       .then(async (res) => {
         const data = await res.json()
         if (!res.ok) throw new Error(data.message || 'Availability could not be checked.')
@@ -132,7 +132,7 @@ export default function App() {
     setError('')
 
     try {
-      const response = await fetch('/api/bookings', {
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomId: selectedRoom.id, guestName, email, checkIn, checkOut, guests }),
